@@ -29,6 +29,8 @@ def main():
     parser.add_argument("--steps", type=int, default=1000, help="Steps to simulate")
     parser.add_argument("--fps", type=int, default=30, help="Frames per second")
     parser.add_argument("--beads", type=int, default=None, help="Number of beads (overrides config)")
+    parser.add_argument("--max_frames", type=int, default=200, help="Maximum number of frames for GIF")
+    parser.add_argument("--continuous", action="store_true", help="Take the first max_frames continuously without downsampling")
     args = parser.parse_args()
 
     if args.trajectory:
@@ -36,6 +38,14 @@ def main():
         with open(args.trajectory, "r", encoding="utf-8") as f:
             data = json.load(f)
         frames = data.get("frames", [])
+        if len(frames) > args.max_frames:
+            if args.continuous:
+                print(f"Taking the first {args.max_frames} continuous frames...")
+                frames = frames[:args.max_frames]
+            else:
+                step = max(1, len(frames) // args.max_frames)
+                print(f"Downsampling {len(frames)} frames by taking every {step}th frame...")
+                frames = frames[::step]
     else:
         # Load config and override steps
         config = load_config(args.config)
